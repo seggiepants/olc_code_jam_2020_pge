@@ -4,7 +4,7 @@ by: seggiepants
 OLC Pixel Game Engine 2 Port
 Ported: 7/6/2021 - 7/13/2021
 
-![Screenshot](https://raw.githubusercontent.com/seggiepants/olc_code_jam_2020pge/master/screenshot.png)
+![Screenshot](https://raw.githubusercontent.com/seggiepants/olc_code_jam_2020_pge/master/screenshot.png)
 <https://github.com/seggiepants/olc_code_jam_2020pge>
 
 This is a port of my entry for the OLC Code Jam 2020 to the Pixel Game Engine 2.0 from SDL2.
