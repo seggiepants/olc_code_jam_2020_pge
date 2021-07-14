@@ -38,7 +38,7 @@ This project still uses several libraries/resources/programs including the follo
 
 ## Compilation:
 ### Windows:
-You should be able to load the solution file from the repository. You will need to update include and library paths to where SDL2 is located on your machine. I did combine all of the various SDL 2 libraries together into a folder, if you did not you many need to add extra folders. Otherwise it should compile normally in debug and release x64.
+You should be able to load the solution file from the repository. You will need to download all of the 3rd party library files, and put them in the correct folders. Only 64 bit Debug/Release are really set up.
 
 ### WebAssembly
 Not attempted yet.
