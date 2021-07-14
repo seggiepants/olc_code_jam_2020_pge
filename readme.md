@@ -25,10 +25,11 @@ This project still uses several libraries/resources/programs including the follo
 * OLC Pixel Game Engine 2.0, game library <https://github.com/OneLoneCoder/olcPixelGameEngine>
 * OLC Pixel Game Engine 2.0 Extension olcPGEX_Sound <https://github.com/OneLoneCoder/olcPixelGameEngine/blob/master/Extensions/olcPGEX_Sound.h>
 * OLC Pixel Game Engine 2.0 Extension olcPGEX_Gamepad <https://github.com/gorbit99/olcPGEX_Gamepad>
+* OLC Pixel Game Engine 2.0 Extension olcPGEX_TTF <https://github.com/gorbit99/olcPGEX_ttf>
 * OLC Pixel Game Engine 2.0 ImGui connector <https://github.com/dandistine/olcPGEDearImGui>
 * Dear ImGui - Immediate mode GUI library <https://github.com/ocornut/imgui>
 * Dear ImGui OpenGL 2 BackEnd <https://github.com/ocornut/imgui/blob/master/backends/imgui_impl_opengl2.h>
-* Nova Font - Used with SDL TTF <http://fontlibrary.org>
+* Nova Font - Used with olcPGEX TTF <http://fontlibrary.org>
 * Images from Kenney.nl <https://kenney.nl/>
 * BFXR (standalone) for sound effect generation <https://www.bfxr.net/>
 * GIMP for image editing <https://www.gimp.org/>
