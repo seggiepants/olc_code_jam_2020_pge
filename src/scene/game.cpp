@@ -17,6 +17,7 @@ const int INVADER_SHOOT_RANDOM = 700;
 const double DROP_TOTAL = 12.0;
 const int MAX_COLS = 10; // duplicate data :(
 const int MAX_ROWS = 5; // duplicate data :(
+const float JOYSTICK_DEAD_ZONE = 0.3;
 
 const std::string PATH_BLOOP = "assets/sound/bloop.wav"; // .ogg";
 const std::string PATH_FONT = "assets/font/NovaSquareBoldOblique.ttf";
@@ -65,18 +66,6 @@ void SceneGame::loadMedia() {
 void SceneGame::init(olc::PixelGameEngine* app) {
 	this->app = app;
 	olc::GamePad::init();
-	//this->joystick = NULL;
-	/*
-	if (SDL_NumJoysticks() >= 1)
-	{
-		//Load joystick
-		this->joystick = SDL_JoystickOpen(0);
-		if (this->joystick == NULL)
-		{
-			std::cout << "Warning: Unable to open game controller! SDL Error: \"" << SDL_GetError()  << "\"" << std::endl;
-		}
-	}
-	*/
 	this->loadMedia();
 	this->tank.init();
 	this->invader.init();
@@ -140,94 +129,36 @@ void SceneGame::destroy() {
 	this->invaderBullet.destroy();
 	this->tankBullet.destroy();
 	this->shield.destroy();
-	//Close game controller
-	/*
-	if (this->joystick != NULL) {
-		SDL_JoystickClose(this->joystick);
-		this->joystick = NULL;
-	}
-	*/
 }
 
 void SceneGame::update(double ms, olc::imgui::PGE_ImGUI* gui) {
 	double fps = 1000.0 / ms;
-	// std::cout << "fps: " << fps << " seconds: " << (globals.runtime / SDL_GetPerformanceFrequency()) << std::endl;
 	olc::vi2d win = app->GetWindowSize();
 	bool showGUI = this->pause || this->isGameOver || this->invader.length() == 0;
 	bool left = false, right = false;
-	/*
-	ImGuiIO& io = ImGui::GetIO();
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-	*/
+
 	if (app->GetKey(olc::Key::ESCAPE).bReleased)
 	{
 		this->quit = true;
 	}
-	//int32_t wheel = app->GetMouseWheel();
-
-	// ImGui_ImplSDL2_ProcessEvent(&e);
-	// 
-	//User requests quit
-	/*
-	if (e.type == SDL_QUIT)
-	{
-		this->quit = true;
-	}
-
-	else if (e.type == SDL_WINDOWEVENT)
-	{
-		if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
-		{
-			io.DisplaySize.x = static_cast<float>(e.window.data1);
-			io.DisplaySize.y = static_cast<float>(e.window.data2);
-		}
-	}
-	*/
-	/*
-			if (io.WantCaptureKeyboard) {
-				io.KeysDown[e.key.keysym.scancode] = false;
-				// std::cout << "Key Up: " << e.key.keysym.scancode << std::endl;
-			}
-	*/			
-	//Select surfaces based on key press
-	// 
 	// Joystick
 	olc::HWButton j_fire, j_left, j_right;
+	float lx = 0.0, ly = 0.0;
+
 	if (this->joystick != nullptr)
 	{
 		j_fire = joystick->getButton(olc::GPButtons::FACE_D);
 		j_left = joystick->getButton(olc::GPButtons::DPAD_L);
 		j_right = joystick->getButton(olc::GPButtons::DPAD_R);
-		float dx = joystick->getAxis(olc::GPAxes::DX);
-		float dy = joystick->getAxis(olc::GPAxes::DY);
-		float lx = joystick->getAxis(olc::GPAxes::LX);
-		float ly = joystick->getAxis(olc::GPAxes::LY);
-
-		std::cout << this->joystick->stillConnected << ": " << dx << "," << dy << " -- " << lx << ", " << ly << "\r\n";
-		if (j_fire.bHeld || j_left.bHeld || j_right.bHeld)
-		{
-			std::cout << "Joystick Event.";
-		}
+		lx = joystick->getAxis(olc::GPAxes::LX);
+		ly = joystick->getAxis(olc::GPAxes::LY);
 	}
 	else
 	{
-		this->joystick = olc::GamePad::selectWithButton(olc::GPButtons::DPAD_D);
-		if (this->joystick != nullptr)
-		{
-			std::cout << "found a joystick.";
-		}
+		this->joystick = olc::GamePad::selectWithButton(olc::GPButtons::SELECT);
 	}
 	
 	// Key Up
-	if (app->GetKey(olc::Key::A).bReleased || app->GetKey(olc::Key::LEFT).bReleased || (this->joystick != nullptr && j_left.bReleased))
-	{
-		this->left = false;
-	}
-	if (app->GetKey(olc::Key::D).bReleased || app->GetKey(olc::Key::RIGHT).bReleased || (this->joystick != nullptr && j_right.bReleased))
-	{
-		this->right = false;
-	}
 	if (app->GetKey(olc::Key::SPACE).bReleased || (this->joystick != nullptr && j_fire.bReleased))
 	{
 		if (!showGUI)
@@ -241,76 +172,27 @@ void SceneGame::update(double ms, olc::imgui::PGE_ImGUI* gui) {
 	}
 
 	// Key Down
-	if (app->GetKey(olc::Key::A).bHeld || app->GetKey(olc::Key::LEFT).bHeld || (this->joystick != nullptr && j_left.bHeld))
+	if (app->GetKey(olc::Key::A).bHeld || app->GetKey(olc::Key::LEFT).bHeld || (this->joystick != nullptr && (j_left.bHeld || lx < -1.0 * JOYSTICK_DEAD_ZONE)))
 	{
 		this->left = true;
 	}
-	if (app->GetKey(olc::Key::D).bHeld || app->GetKey(olc::Key::RIGHT).bHeld || (this->joystick != nullptr && j_right.bHeld))
+	else
+	{
+		this->left = false;
+	}
+	if (app->GetKey(olc::Key::D).bHeld || app->GetKey(olc::Key::RIGHT).bHeld || (this->joystick != nullptr && (j_right.bHeld || lx > JOYSTICK_DEAD_ZONE)))
 	{
 		this->right = true;
 	}
-		
-	/*
-		else if (e.type == SDL_JOYAXISMOTION)
-		{
-			//Motion on controller 0
-			if (e.jaxis.which == 0)
-			{
-				//X axis motion
-				if (e.jaxis.axis == 0)
-				{
-					//Left of dead zone
-					if (e.jaxis.value < -JOYSTICK_DEAD_ZONE)
-					{
-						this->left = true;
-					}
-					//Right of dead zone
-					else if (e.jaxis.value > JOYSTICK_DEAD_ZONE)
-					{
-						this->right = true;
-					}
-					else
-					{
-						this->left = this->right = false;
-					}
-				}
-			}
-		}
-		else if (e.type == SDL_JOYBUTTONDOWN)
-		{
-			if (e.jbutton.which == 0)
-			{
-				//std::cout << "Joystick button down. Button #" << (int)e.jbutton.button << std::endl;
-			}
-		}
-		else if (e.type == SDL_JOYBUTTONUP) {
-			if (e.jbutton.which == 0)
-			{
-				if (e.jbutton.button == 0) {
-					this->spawnTankBullet();
-				}
-				else if (e.jbutton.button == 1) {
-					this->quit = true;
-				}
-				else {
-					//std::cout << "Joystick button up. Button #" << (int)e.jbutton.button << std::endl;
-				}
-			}
-		}
+	else
+	{
+		this->right = false;
 	}
-	*/
+		
 
 	olc::vi2d mousePos = this->app->GetWindowMouse(); // GetMousePos();
 	olc::HWButton btnLeft = this->app->GetMouse(olc::Mouse::LEFT);
 	olc::HWButton btnRight = this->app->GetMouse(olc::Mouse::RIGHT);
-
-	// Setup low-level inputs (e.g. on Win32, GetKeyboardState(), or write to those fields from your Windows message loop handlers, etc.)
-	/*io.DeltaTime = std::max<float>(FRAME_MIN, (float)ms);
-	io.MousePos = ImVec2(static_cast<float>(mousePos.x), static_cast<float>(mousePos.y));
-	io.MouseDown[0] = btnLeft.bPressed;
-	io.MouseDown[1] = btnRight.bPressed;
-	io.MouseWheel = static_cast<float>(wheel);
-	*/
 
 	if (!showGUI) {
 		this->invader.removeInactive();
@@ -340,7 +222,6 @@ void SceneGame::update(double ms, olc::imgui::PGE_ImGUI* gui) {
 		// Draw a pause message box
 		if (this->pause)
 		{
-			//ImGui::NewFrame();
 			gui->ImGui_ImplPGE_NewFrame();
 			ImGui::SetNextWindowPos(ImVec2((float)(win.x / 3.0), (float)(win.y / 3.0)), ImGuiCond_::ImGuiCond_Once);
 			ImGui::SetNextWindowSize(ImVec2((float)(win.x / 3.0), (float)(win.y / 8.0)), ImGuiCond_::ImGuiCond_Once);
@@ -354,7 +235,6 @@ void SceneGame::update(double ms, olc::imgui::PGE_ImGUI* gui) {
 		}
 		if (this->isGameOver)
 		{
-			//ImGui::NewFrame();
 			gui->ImGui_ImplPGE_NewFrame();
 			ImGui::SetNextWindowPos(ImVec2((float)(win.x / 3.0), (float)(win.y / 3.0)), ImGuiCond_::ImGuiCond_Once);
 			ImGui::SetNextWindowSize(ImVec2((float)(win.x / 3.0), (float)(win.y / 5.0)), ImGuiCond_::ImGuiCond_Once);
@@ -372,7 +252,6 @@ void SceneGame::update(double ms, olc::imgui::PGE_ImGUI* gui) {
 		}
 		else if (this->invader.length() == 0)
 		{
-			//ImGui::NewFrame();
 			gui->ImGui_ImplPGE_NewFrame();
 			ImGui::SetNextWindowPos(ImVec2((float)(win.x / 4.0), (float)(win.y / 3.0)), ImGuiCond_::ImGuiCond_Once);
 			ImGui::SetNextWindowSize(ImVec2((float)(win.x / 2.0), (float)(win.y / 6.0)), ImGuiCond_::ImGuiCond_Once);
@@ -394,12 +273,9 @@ void SceneGame::update(double ms, olc::imgui::PGE_ImGUI* gui) {
 	bg.a = 255;
 	bg.r = bg.g = 8;
 	bg.b = 32;
-	//SDL_RenderClear(this->renderer);
 	this->app->Clear(bg);
-	//if (showGUI) ImGui::Render();
 
 	//Apply the image
-	// SDL_RenderClear(this->renderer);
 	app->SetPixelMode(olc::Pixel::ALPHA);
 	this->invader.draw();
 	this->invaderBullet.draw();
@@ -407,23 +283,11 @@ void SceneGame::update(double ms, olc::imgui::PGE_ImGUI* gui) {
 	this->tank.draw();
 	this->shield.draw();
 	
-	// olc::Font* font = ResourceManager::Instance()->GetFont(PATH_FONT, FONT_SIZE);
 	if (this->showFPS) {
 		this->drawFPS(fps);
 	}
 	this->drawScore();
 	app->SetPixelMode(olc::Pixel::NORMAL);
-
-	if (showGUI) {
-		// Draw a pause message box
-
-		// Rendering		
-		// ImGuiSDL::Render(ImGui::GetDrawData());
-
-	}
-
-	//Update the surface
-	// SDL_RenderPresent(this->renderer);	
 }
 
 bool SceneGame::running() {
@@ -542,10 +406,8 @@ void SceneGame::drawFPS(double fps)
 	olc::vi2d win = app->GetWindowSize();
 	std::string temp = std::string(buffer);
 	std::u32string strBuffer(temp.begin(), temp.end());	
-	//olc::vi2d size = app->GetTextSize(strBuffer);
 	olc::FontRect size = this->font->GetStringBounds(strBuffer, 0.0f);
 	olc::vi2d pos = { win.x - size.size.x - 1, win.y - size.size.y - 1 };
-	//this->app->DrawString(pos, strBuffer, fg);
 	olc::Sprite* sprite = this->font->RenderStringToSprite(strBuffer, fg);
 	this->app->DrawSprite(pos, sprite);
 	delete sprite;
@@ -559,14 +421,11 @@ void SceneGame::drawScore()
 	std::snprintf(buffer, 50, "Score: %d", this->points);
 	olc::Pixel fg = olc::WHITE; // { 255, 255, 255 };
 	olc::vi2d win = app->GetWindowSize();
-	//std::string strBuffer(buffer);
 	std::string temp = std::string(buffer);
 	std::u32string strBuffer(temp.begin(), temp.end());
 
-	//olc::vi2d size = app->GetTextSize(strBuffer);
 	olc::FontRect size = this->font->GetStringBounds(strBuffer, 0.0f);
 	olc::vf2d pos = { (float)win.x - size.size.x - 1, (float)0 };
-	//this->app->DrawString(pos, strBuffer, fg);
 	olc::Sprite* sprite = this->font->RenderStringToSprite(strBuffer, fg);
 	this->app->DrawSprite(pos, sprite);
 	delete sprite;
@@ -581,7 +440,7 @@ void SceneGame::addPoints(int points)
 double SceneGame::getInvaderSpeed()
 {
 	const int SPEED_PER_INVADER = 6; // pixels per second
-	return 40 + (((MAX_COLS * MAX_ROWS) - this->invader.length()) * SPEED_PER_INVADER); 
+	return (int)40 + (((MAX_COLS * MAX_ROWS) - this->invader.length()) * SPEED_PER_INVADER); 
 }
 
 void SceneGame::invaderPostUpdate(double ms)
